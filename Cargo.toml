@@ -1,0 +1,11 @@
+[package]
+name = "httplz"
+version = "0.1.0"
+edition = "2021"
+description = "A simple commandline dev webserver to replace php -S"
+authors = ["dditlev"]
+repository = "https://github.com/dditlev/httplz"
+readme = "README.md"
+
+[dependencies]
+tiny_http = "0.11"
