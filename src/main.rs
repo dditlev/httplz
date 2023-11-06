@@ -10,6 +10,7 @@
     httplz 0.0.0.0:7484
     httplz 127.0.0.1:5005
     httplz localhost:2424
+    httplz :2424
 
     // serving current working directory
     httplz localhost:2424 /Users/test/example/dir
@@ -18,6 +19,7 @@
 mod http;
 
 fn main() {
+    println!("[httpplz] v. {}", env!("CARGO_PKG_VERSION"));
     if let Some(host_addr) = std::env::args().nth(1) {
         if let Some(defined_path) = std::env::args().nth(2) {
             http::create_server(host_addr, std::path::PathBuf::from(defined_path));
@@ -48,13 +50,14 @@ mod tests {
     fn can_serve() {
         let _server_thread = std::thread::spawn(|| {
             http::create_server(
-                "127.0.0.1:5050".to_owned(),
+                "localhost:5050".to_owned(),
                 std::path::PathBuf::from("resources/test"),
             );
         });
 
+        // Attempts to serve index.html on request to server root 
         let mut curl_command_index = std::process::Command::new("curl");
-        curl_command_index.arg("127.0.0.1:5050");
+        curl_command_index.arg("localhost:5050");
         let result = curl_command_index
             .output()
             .expect("failed to execute curl command")
@@ -71,7 +74,7 @@ mod tests {
         };
 
         let mut curl_command_png = std::process::Command::new("curl");
-        curl_command_png.arg("127.0.0.1:5050/test.png");
+        curl_command_png.arg("localhost:5050/test.png");
         let result = curl_command_png
             .output()
             .expect("failed to execute curl command")
@@ -88,7 +91,7 @@ mod tests {
         };
 
         let mut curl_command_queryparams = std::process::Command::new("curl");
-        curl_command_queryparams.arg("127.0.0.1:5050/js/scripts.js?v=1");
+        curl_command_queryparams.arg("localhost:5050/js/scripts.js?v=1");
         let result = curl_command_queryparams
             .output()
             .expect("failed to execute curl command")
@@ -105,7 +108,7 @@ mod tests {
         };
 
         let mut curl_command_hash = std::process::Command::new("curl");
-        curl_command_hash.arg("127.0.0.1:5050/index.html#test");
+        curl_command_hash.arg("localhost:5050/index.html#test");
         let result = curl_command_hash
             .output()
             .expect("failed to execute curl command")
@@ -122,5 +125,29 @@ mod tests {
         };
     }
 
-    
+    fn serves_correct_mime() {
+        let _server_thread = std::thread::spawn(|| {
+            http::create_server(
+                "localhost:5050".to_owned(),
+                std::path::PathBuf::from("resources/test"),
+            );
+        });
+
+        let mut curl_command_index = std::process::Command::new("curl");
+        curl_command_index.arg("localhost:5050");
+        let result = curl_command_index
+            .output()
+            .expect("failed to execute curl command")
+            .stdout;
+        match std::fs::read(std::path::PathBuf::from(
+            "resources/test/index.html",
+        )) {
+            Ok(compare) => {
+                assert_eq!(result, compare);
+            }
+            Err(e) => {
+                panic!("Could not compare with file in curl test error {:?}", e)
+            }
+        };
+    }
 }
